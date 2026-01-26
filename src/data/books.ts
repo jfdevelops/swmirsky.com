@@ -1,3 +1,6 @@
+import { ASINS } from '@/lib/constants';
+import type { SearchResult } from '@/lib/search';
+
 export interface Book {
   id: string;
   title: string;
@@ -11,110 +14,138 @@ export interface Book {
   featured: boolean;
 }
 
-export const allCategories = [
-  { id: "historical-fiction", name: "Historical Fiction" },
-  { id: "world-war-ii", name: "World War II" },
-  { id: "drama", name: "Drama" },
-  { id: "philosophy", name: "Philosophy" },
-  { id: "non-fiction", name: "Non-Fiction" },
-  { id: "fiction", name: "Fiction" },
-];
+// Metadata for books that isn't available from the API
+type BookMetadata = {
+  description: string;
+  category: string[];
+  subtitle?: string;
+  featured: boolean;
+  coverImageFallback: string;
+};
 
-export const books: Book[] = [
-  {
-    id: "king-of-vinland",
-    title: "The King of Vinland's Saga",
-    subtitle: "A Novel of Vikings and Indians in Pre-Columbian North America",
-    coverImage: "/book-covers/king-of-vinland.jpg",
+const bookMetadata: Record<string, BookMetadata> = {
+  'king-of-vinland': {
     description:
-      "Fleeing the ice clad fjords of his native Greenland just ahead of greedy kinsman who would keep his inheritance from him, Sigtrygg Thorgilsson, half-breed grandson of the storied explorer Leif Eiriksson, seeks his fortune on the shores of North America, last glimpsed by his grandfather some forty years before.",
-    category: ["historical-fiction", "world-war-ii", "drama"],
-    price: "$18.99",
-    amazonLink:
-      "https://www.amazon.com/King-Vinlands-Saga-Vikings-Pre-Columbian/dp/B00EXAMPLE",
-    rating: 5,
+      'Fleeing the ice clad fjords of his native Greenland just ahead of greedy kinsman who would keep his inheritance from him, Sigtrygg Thorgilsson, half-breed grandson of the storied explorer Leif Eiriksson, seeks his fortune on the shores of North America, last glimpsed by his grandfather some forty years before.',
+    category: ['historical-fiction', 'world-war-ii', 'drama'],
+    subtitle: 'A Novel of Vikings and Indians in Pre-Columbian North America',
     featured: true,
+    coverImageFallback: '/book-covers/king-of-vinland.jpg',
   },
-  {
-    id: "raft-on-river",
-    title: "A Raft on the River",
-    coverImage: "/book-covers/raft-on-river.jpg",
+  'raft-on-river': {
     description:
       "A novelized account of a young girl's coming of age in the shadow of Germany's occupation of Poland during World War II.",
-    category: ["historical-fiction", "world-war-ii", "drama"],
-    price: "$18.49",
-    amazonLink:
-      "https://www.amazon.com/Raft-River-Stuart-W-Mirsky/dp/B00EXAMPLE",
-    rating: 5,
+    category: ['historical-fiction', 'world-war-ii', 'drama'],
     featured: false,
+    coverImageFallback: '/book-covers/raft-on-river.jpg',
   },
-  {
-    id: "value-and-representation",
-    title: "Value and Representation",
+  'value-and-representation': {
+    description:
+      'A philosophical work exploring the implications of a pragmatic epistemology for moral thought through three comprehensive essays.',
+    category: ['philosophy', 'non-fiction'],
     subtitle:
-      "Three Essays Exploring the Implications of a Pragmatic Epistemology for Moral Thought",
-    coverImage: "/book-covers/value-and-representation.jpg",
-    description:
-      "A philosophical work exploring the implications of a pragmatic epistemology for moral thought through three comprehensive essays.",
-    category: ["philosophy", "non-fiction"],
-    price: "$29.31",
-    amazonLink:
-      "https://www.amazon.com/Value-Representation-Exploring-Implications-Epistemology/dp/B00EXAMPLE",
-    rating: 5,
+      'Three Essays Exploring the Implications of a Pragmatic Epistemology for Moral Thought',
     featured: false,
+    coverImageFallback: '/book-covers/value-and-representation.jpg',
   },
-  {
-    id: "choice-and-action",
-    title: "Choice and Action",
-    coverImage: "/book-covers/choice-and-action.jpg",
+  'choice-and-action': {
     description:
-      "A philosophical exploration of choice and action, examining the fundamental questions of human agency and decision-making.",
-    category: ["philosophy", "non-fiction"],
-    price: "$15.99",
-    amazonLink:
-      "https://www.amazon.com/Choice-Action-Stuart-W-Mirsky/dp/B00EXAMPLE",
-    rating: 5,
+      'A philosophical exploration of choice and action, examining the fundamental questions of human agency and decision-making.',
+    category: ['philosophy', 'non-fiction'],
     featured: false,
+    coverImageFallback: '/book-covers/choice-and-action.jpg',
   },
-  {
-    id: "irregularities",
-    title: "Irregularities",
-    coverImage: "/book-covers/irregularities.jpg",
+  irregularities: {
     description:
-      "A compelling work exploring the complexities and irregularities of human experience and understanding.",
-    category: ["fiction"],
-    price: "$22.99",
-    amazonLink:
-      "https://www.amazon.com/Irregularities-Stuart-W-Mirsky/dp/B00EXAMPLE",
-    rating: 5,
+      'A compelling work exploring the complexities and irregularities of human experience and understanding.',
+    category: ['fiction'],
     featured: false,
+    coverImageFallback: '/book-covers/irregularities.jpg',
   },
+};
+
+// Map ASINs to book IDs from the constants
+const asinToBookIdMap: Record<string, string> = Object.fromEntries(
+  ASINS.map((item) => [item.asin, item.id]),
+);
+
+// Map book IDs to ASINs for reverse lookup
+const bookIdToAsinMap: Record<string, string> = Object.fromEntries(
+  ASINS.map((item) => [item.id, item.asin]),
+);
+
+export function getAsinForBook(bookId: string): string | undefined {
+  return bookIdToAsinMap[bookId];
+}
+
+export function getBookIdForAsin(asin: string): string | undefined {
+  return asinToBookIdMap[asin];
+}
+
+/**
+ * Generates books dynamically from ASINS and API data
+ */
+export function generateBooksFromApiData(
+  apiData: Record<string, SearchResult>,
+): Book[] {
+  return ASINS.map(({ asin, id }) => {
+    const metadata = bookMetadata[id];
+    const apiResult = apiData[asin];
+
+    if (!metadata) {
+      throw new Error(`Missing metadata for book ID: ${id}`);
+    }
+
+    return {
+      id,
+      title: apiResult?.title || '',
+      subtitle: metadata.subtitle,
+      coverImage: apiResult?.thumbnails?.[0] || metadata.coverImageFallback,
+      description: metadata.description,
+      category: metadata.category,
+      price: apiResult?.price || '',
+      amazonLink: apiResult?.link || '',
+      rating: apiResult?.rating || 0,
+      featured: metadata.featured,
+    };
+  });
+}
+
+export const allCategories = [
+  { id: 'historical-fiction', name: 'Historical Fiction' },
+  { id: 'world-war-ii', name: 'World War II' },
+  { id: 'drama', name: 'Drama' },
+  { id: 'philosophy', name: 'Philosophy' },
+  { id: 'non-fiction', name: 'Non-Fiction' },
+  { id: 'fiction', name: 'Fiction' },
 ];
 
-export const getFeaturedBook = () => {
+export const getFeaturedBook = (books: Book[]): Book => {
   return books.find((book) => book.featured) || books[0];
 };
 
-export const getBooksByCategory = (category: string): Book[] => {
+export const getBooksByCategory = (category: string, books: Book[]): Book[] => {
   return books.filter((book) => book.category.includes(category));
 };
 
-export function getAllCategories() {
-  return books
-    .flatMap((book) => {
-      return book.category.map((cat) => {
-        const category = allCategories.find((c) => c.id === cat);
+export function getAllCategories(books: Book[]) {
+  return books.flatMap((book) => {
+    return book.category.map((cat) => {
+      const category = allCategories.find((c) => c.id === cat);
 
-        return category ??{};
-      });
-    })
+      return category ?? {};
+    });
+  });
 }
 
-export function getBook(options: {
-  id?: string;
-  title?: string;
-  category?: string;
-}) {
+export function getBook(
+  options: {
+    id?: string;
+    title?: string;
+    category?: string;
+  },
+  books: Book[],
+) {
   const { id, title, category } = options;
 
   return books.find((book) => {
@@ -137,7 +168,10 @@ export function getBook(options: {
   });
 }
 
-export function getBooks(options: { q?: string; category?: string }) {
+export function getBooks(
+  options: { q?: string; category?: string },
+  books: Book[],
+) {
   const { q, category } = options;
 
   return books.filter((book) => {

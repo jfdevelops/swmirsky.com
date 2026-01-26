@@ -1,17 +1,31 @@
-import { createRouter } from "@tanstack/react-router";
+import { QueryClient } from '@tanstack/react-query';
+import { createRouter } from '@tanstack/react-router';
+import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query';
+import { ASINS } from './lib/constants';
+import { routeTree } from './routeTree.gen';
 
-// Import the generated route tree
-import { routeTree } from "./routeTree.gen";
+const asinStrings = ASINS.map((item) => item.asin);
 
-// Create a new router instance
-export const getRouter = () => {
+export function getRouter() {
+  const queryClient = new QueryClient();
+
+  // Extract ASIN strings for the API
+
   const router = createRouter({
     routeTree,
-    context: {},
-
-    scrollRestoration: true,
-    defaultPreloadStaleTime: 0,
+    context: { queryClient, asins: asinStrings },
+    defaultPreload: 'intent',
+  });
+  setupRouterSsrQueryIntegration({
+    router,
+    queryClient,
   });
 
   return router;
-};
+}
+
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: ReturnType<typeof getRouter>;
+  }
+}
