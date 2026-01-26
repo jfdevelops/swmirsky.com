@@ -16,4 +16,3 @@ export function AuthorAvatar({ className }: AuthorAvatarProps) {
     </Avatar>
   );
 }
-
