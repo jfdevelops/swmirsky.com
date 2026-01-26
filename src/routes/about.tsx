@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
-import { User, BookOpen, Award, MapPin } from 'lucide-react'
+import { BookOpen, Award, MapPin } from 'lucide-react'
+import { AuthorAvatar } from '@/components/author-avatar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 
@@ -35,8 +36,8 @@ function About() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <div className="inline-flex items-center justify-center w-24 h-24 bg-amber-500/20 rounded-full mb-6">
-            <User className="w-12 h-12 text-amber-400" />
+          <div className="flex justify-center mb-6">
+            <AuthorAvatar className="size-24" />
           </div>
           <h1 className="text-5xl md:text-6xl font-serif font-bold text-white mb-4">
             Stuart W. Mirsky

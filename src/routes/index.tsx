@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { type } from 'arktype';
 import { motion } from 'framer-motion';
-import { ArrowRight, BookOpen, FileText, User } from 'lucide-react';
+import { ArrowRight, BookOpen, FileText } from 'lucide-react';
+import { AuthorAvatar } from '@/components/author-avatar';
 import {
   BookCard,
   BookCardContent,
@@ -79,7 +80,7 @@ function Home() {
         </section>
 
         {/* About Preview Section */}
-        <section className='py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-slate-900 to-slate-800'>
+        <section className='py-20 px-4 sm:px-6 lg:px-8 bg-linear-to-b from-slate-900 to-slate-800'>
           <div className='max-w-4xl mx-auto'>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -90,9 +91,8 @@ function Home() {
               <Card className='bg-slate-800/50 border-slate-700'>
                 <CardHeader>
                   <div className='flex items-center gap-3 mb-4'>
-                    <div className='p-3 bg-amber-500/20 rounded-lg'>
-                      <User className='w-8 h-8 text-amber-400' />
-                    </div>
+                    <AuthorAvatar />
+
                     <CardTitle className='text-3xl font-serif text-white'>
                       About the Author
                     </CardTitle>
