@@ -9,7 +9,7 @@ interface AuthorAvatarProps {
 export function AuthorAvatar({ className }: AuthorAvatarProps) {
   return (
     <Avatar className={cn('size-14', className)}>
-      <AvatarImage src='/public/stuart-mirsky.jpeg' />
+      <AvatarImage src='/stuart-mirsky.jpeg' />
       <AvatarFallback>
         <User className='w-8 h-8 text-amber-400' />
       </AvatarFallback>
