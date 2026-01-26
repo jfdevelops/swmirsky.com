@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VinlandRouteImport } from './routes/vinland'
 import { Route as PostsRouteImport } from './routes/posts'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as BooksRouteImport } from './routes/books'
@@ -17,6 +18,11 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BooksBookIdRouteImport } from './routes/books/$bookId'
 
+const VinlandRoute = VinlandRouteImport.update({
+  id: '/vinland',
+  path: '/vinland',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PostsRoute = PostsRouteImport.update({
   id: '/posts',
   path: '/posts',
@@ -60,6 +66,7 @@ export interface FileRoutesByFullPath {
   '/books': typeof BooksRouteWithChildren
   '/contact': typeof ContactRoute
   '/posts': typeof PostsRoute
+  '/vinland': typeof VinlandRoute
   '/books/$bookId': typeof BooksBookIdRoute
 }
 export interface FileRoutesByTo {
@@ -69,6 +76,7 @@ export interface FileRoutesByTo {
   '/books': typeof BooksRouteWithChildren
   '/contact': typeof ContactRoute
   '/posts': typeof PostsRoute
+  '/vinland': typeof VinlandRoute
   '/books/$bookId': typeof BooksBookIdRoute
 }
 export interface FileRoutesById {
@@ -79,6 +87,7 @@ export interface FileRoutesById {
   '/books': typeof BooksRouteWithChildren
   '/contact': typeof ContactRoute
   '/posts': typeof PostsRoute
+  '/vinland': typeof VinlandRoute
   '/books/$bookId': typeof BooksBookIdRoute
 }
 export interface FileRouteTypes {
@@ -90,6 +99,7 @@ export interface FileRouteTypes {
     | '/books'
     | '/contact'
     | '/posts'
+    | '/vinland'
     | '/books/$bookId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -99,6 +109,7 @@ export interface FileRouteTypes {
     | '/books'
     | '/contact'
     | '/posts'
+    | '/vinland'
     | '/books/$bookId'
   id:
     | '__root__'
@@ -108,6 +119,7 @@ export interface FileRouteTypes {
     | '/books'
     | '/contact'
     | '/posts'
+    | '/vinland'
     | '/books/$bookId'
   fileRoutesById: FileRoutesById
 }
@@ -118,10 +130,18 @@ export interface RootRouteChildren {
   BooksRoute: typeof BooksRouteWithChildren
   ContactRoute: typeof ContactRoute
   PostsRoute: typeof PostsRoute
+  VinlandRoute: typeof VinlandRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/vinland': {
+      id: '/vinland'
+      path: '/vinland'
+      fullPath: '/vinland'
+      preLoaderRoute: typeof VinlandRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/posts': {
       id: '/posts'
       path: '/posts'
@@ -191,6 +211,7 @@ const rootRouteChildren: RootRouteChildren = {
   BooksRoute: BooksRouteWithChildren,
   ContactRoute: ContactRoute,
   PostsRoute: PostsRoute,
+  VinlandRoute: VinlandRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

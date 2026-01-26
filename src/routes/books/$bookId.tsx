@@ -5,14 +5,14 @@ import {
   BookModalContentNotFound,
 } from '@/components/book-modal';
 import { generateBooksFromApiData } from '@/data/books';
-import { serpApiQuerOptions } from '@/lib/queries/serp-api';
+import { serpApiQueryOptions } from '@/lib/queries/serp-api';
 
 export const Route = createFileRoute('/books/$bookId')({
   component: RouteComponent,
   loader: async ({ params, context }) => {
     const { asins, queryClient } = context;
     const asinData = await queryClient.ensureQueryData(
-      serpApiQuerOptions({ asins }),
+      serpApiQueryOptions({ asins }),
     );
 
     const books = generateBooksFromApiData(asinData || {});

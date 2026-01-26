@@ -1,20 +1,21 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import type { Book } from "@/data/books";
-import { AnimatePresence, motion } from "framer-motion";
-import { ExternalLink } from "lucide-react";
-import type { ComponentPropsWithRef } from "react";
-import { renderStars } from "./stars";
-import { ScrollArea } from "./ui/scroll-area";
+} from '@/components/ui/dialog';
+import type { Book } from '@/data/books';
+import { motion } from 'framer-motion';
+import { ExternalLink } from 'lucide-react';
+import type { ComponentPropsWithRef } from 'react';
+import { ResponsiveModal } from './responsive-modal';
+import { renderStars } from './stars';
+import { ScrollArea } from './ui/scroll-area';
 
-type BookModalProps = Omit<ComponentPropsWithRef<typeof Dialog>, "children"> & {
+type BookModalProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   children: React.ReactNode;
 };
 
@@ -24,13 +25,9 @@ type BookModalContentProps = {
 
 export function BookModal({ children, ...props }: BookModalProps) {
   return (
-    <Dialog {...props}>
-      <AnimatePresence>
-        <DialogContent className="w-[55vw] max-w-7xl! max-h-[70vh] bg-slate-800 border-slate-700 p-0 grid! grid-rows-[1fr]! overflow-hidden">
-          {children}
-        </DialogContent>
-      </AnimatePresence>
-    </Dialog>
+    <ResponsiveModal {...props}>
+      <div className='flex flex-col h-full min-h-0'>{children}</div>
+    </ResponsiveModal>
   );
 }
 
@@ -41,9 +38,9 @@ export function BookModalContent({ book }: BookModalContentProps) {
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9, y: 20 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-      className="relative p-6 h-full overflow-hidden flex flex-col"
+      className='relative p-6 h-full overflow-hidden flex flex-col'
     >
-      <div className="grid md:grid-cols-2 gap-8 h-full min-h-0 overflow-hidden">
+      <div className='grid md:grid-cols-2 gap-8 h-full min-h-0 overflow-hidden'>
         {/* Book Cover */}
         <motion.div
           initial={{ opacity: 0, x: -30, rotateY: -15 }}
@@ -148,12 +145,11 @@ export function BookModalContent({ book }: BookModalContentProps) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.55 }}
-            className="flex-1 min-h-0 mb-4 overflow-y-auto pr-4"
-            style={{ maxHeight: "100%" }}
+            className='flex-1 min-h-0 mb-4'
           >
-            <ScrollArea className="h-full">
-              <div className="pr-4">
-                <p className="text-gray-300 leading-relaxed text-lg">
+            <ScrollArea className='h-full'>
+              <div className='pr-4'>
+                <p className='text-gray-300 leading-relaxed text-lg'>
                   {book.description}
                 </p>
               </div>

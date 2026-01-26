@@ -15,7 +15,7 @@ import {
   getAllCategories,
   getBooks,
 } from '@/data/books';
-import { serpApiQuerOptions } from '@/lib/queries/serp-api';
+import { serpApiQueryOptions } from '@/lib/queries/serp-api';
 
 const searchParams = type({
   'q?': 'string',
@@ -27,7 +27,7 @@ export const Route = createFileRoute('/books')({
   loader: async ({ context }) => {
     const { asins, queryClient } = context;
     const asinData = await queryClient.ensureQueryData(
-      serpApiQuerOptions({ asins }),
+      serpApiQueryOptions({ asins }),
     );
 
     return { asinData };

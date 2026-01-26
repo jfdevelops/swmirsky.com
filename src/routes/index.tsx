@@ -1,7 +1,3 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { type } from 'arktype';
-import { motion } from 'framer-motion';
-import { ArrowRight, BookOpen, FileText } from 'lucide-react';
 import { AuthorAvatar } from '@/components/author-avatar';
 import {
   BookCard,
@@ -16,17 +12,25 @@ import {
 import { BookShowcase } from '@/components/book-showcase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { VinlandProposalModal } from '@/components/vinland-proposal-modal';
 import { generateBooksFromApiData, getFeaturedBook } from '@/data/books';
-import { serpApiQuerOptions } from '@/lib/queries/serp-api';
+import { serpApiQueryOptions } from '@/lib/queries/serp-api';
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { type } from 'arktype';
+import { motion } from 'framer-motion';
+import { ArrowRight, BookOpen, FileText, Film } from 'lucide-react';
 
-const searchParams = type({ 'bookId?': 'string' });
+const searchParams = type({
+  'bookId?': 'string',
+  'vinlandProposal?': 'boolean',
+});
 
 export const Route = createFileRoute('/')({
   component: Home,
   loader: async ({ context }) => {
     const { asins, queryClient } = context;
     const asinData = await queryClient.ensureQueryData(
-      serpApiQuerOptions({ asins }),
+      serpApiQueryOptions({ asins }),
     );
 
     return { asinData };
@@ -40,14 +44,45 @@ function Home() {
   const featuredBook = getFeaturedBook(books);
   const otherBooks = books.filter((book) => !book.featured);
   const navigate = Route.useNavigate();
-  const { bookId } = Route.useSearch();
+  const { bookId, vinlandProposal } = Route.useSearch();
   const book = bookId ? books.find((book) => book.id === bookId) : undefined;
+  const isVinlandBook = featuredBook.id === 'king-of-vinland';
 
   return (
     <>
       <div className='min-h-screen bg-slate-900'>
         {/* Hero Book Showcase */}
         <BookShowcase book={featuredBook} />
+
+        {/* Streaming Proposal Button - Only for Vinland */}
+        {isVinlandBook && (
+          <section className='py-12 px-4 sm:px-6 lg:px-8 bg-slate-900'>
+            <div className='max-w-7xl mx-auto'>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className='text-center'
+              >
+                <Button
+                  asChild
+                  size='lg'
+                  className='bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-lg px-8 py-6'
+                >
+                  <Link
+                    to='/'
+                    search={{ vinlandProposal: true }}
+                    className='inline-flex items-center gap-2'
+                  >
+                    <Film size={20} />
+                    View Streaming Series Proposal
+                  </Link>
+                </Button>
+              </motion.div>
+            </div>
+          </section>
+        )}
 
         {/* Featured Books Section */}
         <section className='py-20 px-4 sm:px-6 lg:px-8 bg-slate-900'>
@@ -223,6 +258,16 @@ function Home() {
       >
         {book ? <BookModalContent book={book} /> : <BookModalContentNotFound />}
       </BookModal>
+
+      <VinlandProposalModal
+        open={!!vinlandProposal}
+        onOpenChange={(open) => {
+          navigate({
+            to: '/',
+            search: { vinlandProposal: open === true ? true : undefined },
+          });
+        }}
+      />
     </>
   );
 }
