@@ -17,13 +17,16 @@ export function ApiInvalidatorDevtoolsPanel() {
     const unsubscribe = DevtoolsApiRefetchEventClient.on(
       'asin-cache-invalidator',
       (event) => {
-        // Check if this operation was cancelled
+        console.log('Event received:', event.payload);
         const asins = Object.keys(event.payload.asinData);
+
+        // Check if this operation was cancelled
         const wasCancelled =
           asins.some((asin) => cancelledRef.current.has(asin)) ||
           allCancelledRef.current;
 
         if (wasCancelled) {
+          console.log('Operation was cancelled, clearing loading states');
           // Clear cancelled flags
           for (const asin of asins) {
             cancelledRef.current.delete(asin);
@@ -37,19 +40,23 @@ export function ApiInvalidatorDevtoolsPanel() {
             for (const asin of asins) {
               delete next[asin];
             }
+            console.log('Cleared loading states (cancelled):', next);
             return next;
           });
           setAllLoading(false);
           return;
         }
 
+        console.log('Updating data and clearing loading states for:', asins);
         setData((prev) => ({ ...prev, ...event.payload.asinData }));
+
         // Clear loading states for the ASINs that were fetched
         setLoading((prev) => {
           const next = { ...prev };
           for (const asin of asins) {
             delete next[asin];
           }
+          console.log('Cleared loading states (success):', next);
           return next;
         });
         setAllLoading(false);
@@ -62,9 +69,18 @@ export function ApiInvalidatorDevtoolsPanel() {
   const handleStopAll = () => {
     allCancelledRef.current = true;
     setAllLoading(false);
-    // Mark all ASINs as cancelled
-    ASINS.forEach(({ asin }) => {
+    // Mark all ASINs as cancelled and immediately clear their loading states
+    const allAsins = ASINS.map(({ asin }) => asin);
+    allAsins.forEach((asin) => {
       cancelledRef.current.add(asin);
+    });
+    // Immediately clear all loading states
+    setLoading((prev) => {
+      const next = { ...prev };
+      for (const asin of allAsins) {
+        delete next[asin];
+      }
+      return next;
     });
   };
 
@@ -72,14 +88,40 @@ export function ApiInvalidatorDevtoolsPanel() {
     // Reset cancellation flags
     allCancelledRef.current = false;
     cancelledRef.current.clear();
-    setAllLoading(true);
     const allAsins = ASINS.map((item) => item.asin);
+
+    console.log('Setting loading states for all ASINs:', allAsins);
+
+    // Set loading state for each individual ASIN FIRST
+    setLoading((prev) => {
+      const next = { ...prev };
+      for (const asin of allAsins) {
+        next[asin] = true;
+      }
+      console.log('Loading states set:', next);
+      return next;
+    });
+
+    // Then set all loading state
+    setAllLoading(true);
+
+    // Use requestAnimationFrame to ensure React renders the loading states
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+
     try {
       // Invalidate the cache and refetch from API
       await invalidateAsinCache({ data: { asins: allAsins } });
 
       // Check if cancelled before invalidating React Query
       if (allCancelledRef.current) {
+        // Clear loading states if cancelled
+        setLoading((prev) => {
+          const next = { ...prev };
+          for (const asin of allAsins) {
+            delete next[asin];
+          }
+          return next;
+        });
         return;
       }
 
@@ -87,10 +129,38 @@ export function ApiInvalidatorDevtoolsPanel() {
       await queryClient.invalidateQueries({
         queryKey: ['serp-api'],
       });
+
+      // Fallback: Clear loading states after a short delay in case event doesn't arrive
+      // The event handler should clear them, but this ensures they're cleared
+      setTimeout(() => {
+        setLoading((prev) => {
+          const next = { ...prev };
+          let hasChanges = false;
+          for (const asin of allAsins) {
+            if (next[asin]) {
+              delete next[asin];
+              hasChanges = true;
+            }
+          }
+          if (hasChanges) {
+            console.log('Fallback: Clearing loading states after timeout');
+          }
+          return next;
+        });
+        setAllLoading(false);
+      }, 1000);
     } catch (error) {
       if (!allCancelledRef.current) {
         console.error('Failed to invalidate all ASINs:', error);
         setAllLoading(false);
+        // Clear individual loading states on error
+        setLoading((prev) => {
+          const next = { ...prev };
+          for (const asin of allAsins) {
+            delete next[asin];
+          }
+          return next;
+        });
       }
     }
   };
@@ -115,6 +185,11 @@ export function ApiInvalidatorDevtoolsPanel() {
       // Check if cancelled before invalidating React Query
       if (cancelledRef.current.has(asin)) {
         cancelledRef.current.delete(asin);
+        setLoading((prev) => {
+          const next = { ...prev };
+          delete next[asin];
+          return next;
+        });
         return;
       }
 
@@ -122,6 +197,21 @@ export function ApiInvalidatorDevtoolsPanel() {
       await queryClient.invalidateQueries({
         queryKey: ['serp-api'],
       });
+
+      // Fallback: Clear loading state after a short delay in case event doesn't arrive
+      setTimeout(() => {
+        setLoading((prev) => {
+          if (prev[asin]) {
+            console.log(
+              `Fallback: Clearing loading state for ${asin} after timeout`,
+            );
+            const next = { ...prev };
+            delete next[asin];
+            return next;
+          }
+          return prev;
+        });
+      }, 1000);
     } catch (error) {
       if (!cancelledRef.current.has(asin)) {
         console.error(`Failed to invalidate ASIN ${asin}:`, error);
@@ -185,11 +275,19 @@ export function ApiInvalidatorDevtoolsPanel() {
                 className='flex items-center justify-between gap-2 p-2 bg-slate-800/50 rounded border border-slate-700'
               >
                 <div className='flex-1 min-w-0'>
-                  <div className='text-sm font-mono text-gray-300 truncate'>
+                  <div className='text-sm font-mono text-gray-300 truncate flex items-center gap-2'>
                     {asin}
+                    {isLoading && (
+                      <span className='inline-block w-2 h-2 bg-amber-500 rounded-full animate-pulse' />
+                    )}
                   </div>
                   <div className='text-xs text-gray-500 truncate'>{id}</div>
-                  {asinData && (
+                  {isLoading && (
+                    <div className='text-xs text-amber-400 mt-1'>
+                      Loading...
+                    </div>
+                  )}
+                  {asinData && !isLoading && (
                     <div className='text-xs text-amber-400 mt-1 truncate'>
                       {asinData.title}
                     </div>
@@ -209,6 +307,7 @@ export function ApiInvalidatorDevtoolsPanel() {
                       onClick={() => handleInvalidateOne(asin)}
                       size='sm'
                       className='bg-slate-700 hover:bg-slate-600 text-white'
+                      disabled={allLoading}
                     >
                       Refetch
                     </Button>

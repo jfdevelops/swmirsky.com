@@ -1,24 +1,20 @@
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { type } from 'arktype';
+import { motion } from 'framer-motion';
+import { ArrowRight, Film } from 'lucide-react';
 import { AuthorAvatar } from '@/components/author-avatar';
-import {
-  BookCard,
-  BookCardContent,
-  BookCardGrid,
-} from '@/components/book-card';
+import type { BlogPost } from '@/components/blog-post-card';
 import {
   BookModal,
   BookModalContent,
   BookModalContentNotFound,
 } from '@/components/book-modal';
-import { BookShowcase } from '@/components/book-showcase';
+import { Bookshelf } from '@/components/bookshelf';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { VinlandProposalModal } from '@/components/vinland-proposal-modal';
 import { generateBooksFromApiData, getFeaturedBook } from '@/data/books';
 import { serpApiQueryOptions } from '@/lib/queries/serp-api';
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { type } from 'arktype';
-import { motion } from 'framer-motion';
-import { ArrowRight, BookOpen, FileText, Film } from 'lucide-react';
 
 const searchParams = type({
   'bookId?': 'string',
@@ -42,17 +38,62 @@ function Home() {
   const { asinData } = Route.useLoaderData();
   const books = generateBooksFromApiData(asinData || {});
   const featuredBook = getFeaturedBook(books);
-  const otherBooks = books.filter((book) => !book.featured);
   const navigate = Route.useNavigate();
   const { bookId, vinlandProposal } = Route.useSearch();
   const book = bookId ? books.find((book) => book.id === bookId) : undefined;
   const isVinlandBook = featuredBook.id === 'king-of-vinland';
 
+  // Blog posts data for the bookshelf
+  const blogPosts: BlogPost[] = [
+    {
+      id: 'man-of-la-books-review',
+      title: "Man Of La Book's Review",
+      excerpt: "Read the latest review of The King of Vinland's Saga",
+      date: 'September 15, 2022',
+      source: 'Man Of La Book',
+      link: '/blogs',
+    },
+    {
+      id: 'goodreads-review',
+      title: 'Goodreads Review',
+      excerpt: 'See what readers are saying about the books',
+      date: 'September 15, 2022',
+      source: 'Goodreads',
+      link: '/blogs',
+    },
+  ];
+
+  const handleBookClick = (bookId: string) => {
+    navigate({ to: '/', search: { bookId } });
+  };
+
   return (
     <>
       <div className='min-h-screen bg-slate-900'>
-        {/* Hero Book Showcase */}
-        <BookShowcase book={featuredBook} />
+        {/* Bookshelf Section */}
+        <section className='py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900'>
+          <div className='max-w-7xl mx-auto'>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className='text-center mb-12'
+            >
+              <h1 className='text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white mb-4'>
+                The Library
+              </h1>
+              <p className='text-xl text-gray-400 max-w-2xl mx-auto'>
+                Explore books, media, and blogs from Stuart W. Mirsky
+              </p>
+            </motion.div>
+            <Bookshelf
+              books={books}
+              blogPosts={blogPosts}
+              onBookClick={handleBookClick}
+            />
+          </div>
+        </section>
 
         {/* Streaming Proposal Button - Only for Vinland */}
         {isVinlandBook && (
@@ -83,36 +124,6 @@ function Home() {
             </div>
           </section>
         )}
-
-        {/* Featured Books Section */}
-        <section className='py-20 px-4 sm:px-6 lg:px-8 bg-slate-900'>
-          <div className='max-w-7xl mx-auto'>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className='text-center mb-12'
-            >
-              <h2 className='text-4xl md:text-5xl font-serif font-bold text-white mb-4'>
-                Explore More Works
-              </h2>
-              <p className='text-xl text-gray-400 max-w-2xl mx-auto'>
-                Discover historical fiction, philosophy, and compelling
-                narratives from Stuart W. Mirsky
-              </p>
-            </motion.div>
-            <BookCardGrid>
-              {otherBooks.map((book) => (
-                <BookCard key={book.id}>
-                  <Link to='/' search={{ bookId: book.id }}>
-                    <BookCardContent book={book} />
-                  </Link>
-                </BookCard>
-              ))}
-            </BookCardGrid>
-          </div>
-        </section>
 
         {/* About Preview Section */}
         <section className='py-20 px-4 sm:px-6 lg:px-8 bg-linear-to-b from-slate-900 to-slate-800'>
@@ -157,94 +168,6 @@ function Home() {
                   </Button>
                 </CardContent>
               </Card>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* Latest Blog Posts Preview */}
-        <section className='py-20 px-4 sm:px-6 lg:px-8 bg-slate-800'>
-          <div className='max-w-7xl mx-auto'>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className='text-center mb-12'
-            >
-              <h2 className='text-4xl md:text-5xl font-serif font-bold text-white mb-4'>
-                Latest Updates
-              </h2>
-              <p className='text-xl text-gray-400 max-w-2xl mx-auto'>
-                Stay connected with reviews, articles, and insights
-              </p>
-            </motion.div>
-            <div className='grid md:grid-cols-2 gap-6 mb-8'>
-              {[
-                {
-                  title: "Man Of La Book's Review",
-                  excerpt:
-                    "Read the latest review of The King of Vinland's Saga",
-                  link: '/blogs',
-                  id: 'man-of-la-books-review',
-                },
-                {
-                  title: 'Goodreads Review',
-                  excerpt: 'See what readers are saying about the books',
-                  link: '/blogs',
-                  id: 'goodreads-review',
-                },
-              ].map(({ id, title, excerpt, link }, index) => (
-                <motion.div
-                  key={id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                >
-                  <Card className='bg-slate-700/50 border-slate-600 hover:border-amber-500/50 transition-colors h-full'>
-                    <CardHeader>
-                      <div className='flex items-center gap-3 mb-2'>
-                        <FileText className='w-6 h-6 text-amber-400' />
-                        <CardTitle className='text-xl text-white'>
-                          {title}
-                        </CardTitle>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className='text-gray-300 mb-4'>{excerpt}</p>
-                      <Button
-                        asChild
-                        variant='outline'
-                        size='sm'
-                        className='border-amber-500/50 text-amber-400 hover:bg-amber-500/10'
-                      >
-                        <Link to={link} className='flex items-center gap-2'>
-                          Read More
-                          <ArrowRight size={16} />
-                        </Link>
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className='text-center'
-            >
-              <Button
-                asChild
-                size='lg'
-                className='bg-amber-500 hover:bg-amber-600 text-white'
-              >
-                <Link to='/blogs' className='flex items-center gap-2'>
-                  <BookOpen size={20} />
-                  View All Blogs & Media
-                </Link>
-              </Button>
             </motion.div>
           </div>
         </section>
